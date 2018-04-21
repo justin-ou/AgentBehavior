@@ -8,9 +8,10 @@ public class Vehicle : MonoBehaviour {
 
     public Vector3 velocity;
     public Vector3 acceleration;
-    public float maxSpeed = 4.0f;
+    public float maxSpeed = .1f;
     public float maxForce = 0.1f;
     public float mass = 1.0f;
+    public float deltaAngleLimit = -0.85f;
 
 	// Use this for initialization
 	void Start () {
@@ -36,11 +37,20 @@ public class Vehicle : MonoBehaviour {
         // Normalize to vehicle speed
         // Get steering velocity based on current and target velocity
         // Limit resultant force
-        Vector3 seekVelocity = target - transform.position;
-        seekVelocity = seekVelocity.normalized * maxSpeed;
+        Vector3 targetVelocity = (target - transform.position).normalized;
+        float deltaAngle = Vector3.Dot(targetVelocity, velocity.normalized);
 
-        Vector3 steerVelocity = seekVelocity - velocity;      
-        Vector3.ClampMagnitude(steerVelocity, maxForce);
+        // If 180deg angle, adjust target velocity
+        if (deltaAngle < deltaAngleLimit) {
+            Vector3 rightVector = Vector3.Cross(targetVelocity, transform.up);            
+            targetVelocity = rightVector.normalized;
+        }
+
+        targetVelocity = targetVelocity * maxSpeed;
+        Debug.DrawRay(transform.position, targetVelocity * 5f, Color.red);
+
+        Vector3 steerVelocity = targetVelocity - velocity;
+        steerVelocity = Vector3.ClampMagnitude(steerVelocity, maxForce);
 
         ApplyForce(steerVelocity);
     }
